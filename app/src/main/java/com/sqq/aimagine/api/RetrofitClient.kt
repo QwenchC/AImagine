@@ -1,5 +1,6 @@
 package com.sqq.aimagine.api
 
+import okhttp3.ConnectionPool
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -22,14 +23,19 @@ object RetrofitClient {
             currentBaseUrl = baseUrl
             
             val logging = HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BODY
+                level = HttpLoggingInterceptor.Level.BASIC
             }
             
             val clientBuilder = OkHttpClient.Builder()
                 .addInterceptor(logging)
                 .connectTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(60, TimeUnit.SECONDS)
-                .writeTimeout(60, TimeUnit.SECONDS)
+                .readTimeout(600, TimeUnit.SECONDS)
+                .writeTimeout(30, TimeUnit.SECONDS)
+                .callTimeout(600, TimeUnit.SECONDS)
+                // 配置连接池：最多5个空闲连接，保持5分钟
+                .connectionPool(ConnectionPool(5, 5, TimeUnit.MINUTES))
+                // 启用重试
+                .retryOnConnectionFailure(true)
             
             // 如果是HTTPS，添加信任所有证书的配置（仅用于开发环境）
             if (baseUrl.startsWith("https://", ignoreCase = true)) {
@@ -60,5 +66,11 @@ object RetrofitClient {
     
     fun getApi(baseUrl: String): StableDiffusionApi {
         return getClient(baseUrl).create(StableDiffusionApi::class.java)
+    }
+    
+    // 重置客户端，用于强制重新创建连接
+    fun reset() {
+        retrofit = null
+        currentBaseUrl = ""
     }
 }

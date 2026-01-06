@@ -89,24 +89,44 @@ class SettingsFragment : Fragment() {
         testConnectionButton.isEnabled = false
 
         lifecycleScope.launch {
-            try {
-                val baseUrl = if (apiUrl.endsWith("/")) apiUrl else "$apiUrl/"
-                val api = RetrofitClient.getApi(baseUrl)
-                val response = api.getOptions()
+            var retryCount = 0
+            val maxRetries = 2
+            
+            while (retryCount <= maxRetries) {
+                try {
+                    if (retryCount > 0) {
+                        connectionStatusText.text = "Retrying... (${retryCount}/${maxRetries})"
+                        kotlinx.coroutines.delay(1000)
+                        // 重置客户端
+                        RetrofitClient.reset()
+                    }
+                    
+                    val baseUrl = if (apiUrl.endsWith("/")) apiUrl else "$apiUrl/"
+                    val api = RetrofitClient.getApi(baseUrl)
+                    val response = api.getOptions()
 
-                if (response.isSuccessful) {
-                    connectionStatusText.text = "✓ Connection successful!"
-                    connectionStatusText.setTextColor(resources.getColor(android.R.color.holo_green_dark, null))
-                } else {
-                    connectionStatusText.text = "✗ Connection failed: ${response.code()}"
-                    connectionStatusText.setTextColor(resources.getColor(android.R.color.holo_red_dark, null))
+                    if (response.isSuccessful) {
+                        connectionStatusText.text = "✓ Connection successful!"
+                        connectionStatusText.setTextColor(resources.getColor(android.R.color.holo_green_dark, null))
+                        break
+                    } else {
+                        throw Exception("HTTP ${response.code()}")
+                    }
+                } catch (e: Exception) {
+                    if (retryCount < maxRetries && 
+                        (e.message?.contains("connection", ignoreCase = true) == true ||
+                         e.message?.contains("timeout", ignoreCase = true) == true ||
+                         e.message?.contains("closed", ignoreCase = true) == true)) {
+                        retryCount++
+                    } else {
+                        connectionStatusText.text = "✗ Error: ${e.message}"
+                        connectionStatusText.setTextColor(resources.getColor(android.R.color.holo_red_dark, null))
+                        break
+                    }
                 }
-            } catch (e: Exception) {
-                connectionStatusText.text = "✗ Error: ${e.message}"
-                connectionStatusText.setTextColor(resources.getColor(android.R.color.holo_red_dark, null))
-            } finally {
-                testConnectionButton.isEnabled = true
             }
+            
+            testConnectionButton.isEnabled = true
         }
     }
 }

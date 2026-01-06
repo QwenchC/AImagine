@@ -24,6 +24,8 @@ class StableDiffusionFragment : Fragment() {
 
     private lateinit var viewModel: StableDiffusionViewModel
     private lateinit var promptEditText: EditText
+    private lateinit var widthEditText: EditText
+    private lateinit var heightEditText: EditText
     private lateinit var generateButton: Button
     private lateinit var progressBar: ProgressBar
     private lateinit var resultImageView: ImageView
@@ -43,6 +45,8 @@ class StableDiffusionFragment : Fragment() {
 
         // 初始化视图
         promptEditText = view.findViewById(R.id.prompt_edit_text)
+        widthEditText = view.findViewById(R.id.width_edit_text)
+        heightEditText = view.findViewById(R.id.height_edit_text)
         generateButton = view.findViewById(R.id.generate_button)
         progressBar = view.findViewById(R.id.progress_bar)
         resultImageView = view.findViewById(R.id.result_image_view)
@@ -51,11 +55,28 @@ class StableDiffusionFragment : Fragment() {
         // 设置按钮点击事件
         generateButton.setOnClickListener {
             val prompt = promptEditText.text.toString()
-            if (prompt.isNotEmpty()) {
-                viewModel.generateImage(prompt)
-            } else {
+            val widthStr = widthEditText.text.toString()
+            val heightStr = heightEditText.text.toString()
+            
+            if (prompt.isEmpty()) {
                 Toast.makeText(context, "Please enter a prompt", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
             }
+            
+            val width = widthStr.toIntOrNull() ?: 512
+            val height = heightStr.toIntOrNull() ?: 512
+            
+            if (width < 64 || width > 2048) {
+                Toast.makeText(context, "Width must be between 64 and 2048", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            
+            if (height < 64 || height > 2048) {
+                Toast.makeText(context, "Height must be between 64 and 2048", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            
+            viewModel.generateImage(prompt, width, height)
         }
 
         // 观察ViewModel数据

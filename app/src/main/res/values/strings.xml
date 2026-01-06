@@ -16,6 +16,9 @@
     <!-- Stable Diffusion Fragment -->
     <string name="stable_diffusion_title">Stable Diffusion</string>
     <string name="prompt_hint">Enter your prompt here</string>
+    <string name="image_size_title">Image Size</string>
+    <string name="width_hint">Width</string>
+    <string name="height_hint">Height</string>
     <string name="generate_button">Generate Image</string>
     <string name="ready_status">Ready to generate</string>
     <string name="generated_image_description">Generated image</string>
